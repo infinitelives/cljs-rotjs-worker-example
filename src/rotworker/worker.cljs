@@ -5,14 +5,19 @@
 (js/console.log ROT)
 
 (def api
-  {"generate-map"
-   (fn [w h]
-     (let [m (ROT/Map.Arena. w h)]
-       (.create m (fn [& result] (js/postMessage (clj->js result))))))})
+  {"generate-cellular-map"
+   (fn [uid [w h r opts]]
+     ; TODO: seed
+     (let [m (ROT/Map.Cellular. w h opts)
+           map-shape (make-array nil w h)]
+       (.randomize m r)
+       ;(.create m js/console.log)
+       (.create m (partial aset map-shape))
+       (js/postMessage (clj->js [uid map-shape]))))})
 
 (defn init []
   (js/self.addEventListener "message"
                             (fn [^js e]
-                              (let [[call args] (.. e -data)]
-                                (apply (get api call) args))))
+                              (let [[uid call args] (.. e -data)]
+                                ((get api call) uid args))))
   (js/console.log "worker main"))
